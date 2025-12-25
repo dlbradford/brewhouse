@@ -12,6 +12,7 @@ A modern GTK4/libadwaita GUI for managing Homebrew packages on Linux.
 ## Screenshots
 
 The application uses a clean sidebar navigation with three main views:
+
 - Installed: List and manage your installed packages
 - Browse: Search and install new packages
 - Updates: Check for and apply package updates
@@ -21,16 +22,19 @@ The application uses a clean sidebar navigation with three main views:
 ### System Dependencies
 
 **Ubuntu/Debian:**
+
 ```bash
 sudo apt install libgtk-4-dev libadwaita-1-dev
 ```
 
 **Fedora:**
+
 ```bash
 sudo dnf install gtk4-devel libadwaita-devel
 ```
 
 **Arch Linux:**
+
 ```bash
 sudo pacman -S gtk4 libadwaita
 ```
@@ -93,3 +97,7 @@ Or run the binary directly:
 ## License
 
 MIT
+
+## Caveats
+
+This was not written by a developer. Just a retired person who has the time and an idea. It was coded by Claude Code. I find it very useful for keeping my brew installs in good shape. I've done ZERO security on this, if you want to harden it or something, have at it.

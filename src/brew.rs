@@ -672,6 +672,63 @@ mod tests {
     }
 
     #[test]
+    fn test_parse_brew_info_with_dependencies() {
+        let json = r#"{
+            "formulae": [{
+                "name": "git",
+                "versions": {
+                    "stable": "2.43.0"
+                },
+                "dependencies": ["curl", "expat", "openssl", "perl"],
+                "build_dependencies": ["gettext", "cmake"]
+            }]
+        }"#;
+
+        #[derive(Deserialize)]
+        struct BrewInfoResponse {
+            formulae: Vec<BrewInfoFormula>,
+        }
+
+        let response: BrewInfoResponse = serde_json::from_str(json).unwrap();
+        let formula = &response.formulae[0];
+
+        // Verify runtime dependencies
+        let deps = formula.dependencies.as_ref().unwrap();
+        assert_eq!(deps.len(), 4);
+        assert!(deps.contains(&"curl".to_string()));
+        assert!(deps.contains(&"openssl".to_string()));
+
+        // Verify build dependencies
+        let build_deps = formula.build_dependencies.as_ref().unwrap();
+        assert_eq!(build_deps.len(), 2);
+        assert!(build_deps.contains(&"gettext".to_string()));
+        assert!(build_deps.contains(&"cmake".to_string()));
+    }
+
+    #[test]
+    fn test_parse_brew_info_empty_dependencies() {
+        let json = r#"{
+            "formulae": [{
+                "name": "simple",
+                "versions": { "stable": "1.0.0" },
+                "dependencies": [],
+                "build_dependencies": []
+            }]
+        }"#;
+
+        #[derive(Deserialize)]
+        struct BrewInfoResponse {
+            formulae: Vec<BrewInfoFormula>,
+        }
+
+        let response: BrewInfoResponse = serde_json::from_str(json).unwrap();
+        let formula = &response.formulae[0];
+
+        assert!(formula.dependencies.as_ref().unwrap().is_empty());
+        assert!(formula.build_dependencies.as_ref().unwrap().is_empty());
+    }
+
+    #[test]
     fn test_parse_package_struct() {
         let pkg = Package {
             name: "test".to_string(),

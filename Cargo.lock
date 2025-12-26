@@ -20,6 +20,7 @@ version = "0.1.0"
 dependencies = [
  "gtk4",
  "libadwaita",
+ "regex-lite",
  "serde",
  "serde_json",
  "tokio",
@@ -597,6 +598,12 @@ checksum = "ed2bf2547551a7053d6fdfafda3f938979645c44812fbfcda098faae3f1a362d"
 dependencies = [
  "bitflags",
 ]
+
+[[package]]
+name = "regex-lite"
+version = "0.1.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8d942b98df5e658f56f20d592c7f868833fe38115e65c33003d8cd224b0155da"
 
 [[package]]
 name = "rustc_version"

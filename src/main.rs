@@ -146,7 +146,7 @@ fn show_update_dialog<F: Fn() + 'static>(app: &Application, on_complete: F) {
     let status_label_clone = status_label.clone();
     let text_view_clone = text_view.clone();
     let continue_btn_clone = continue_btn.clone();
-    let dialog_clone = dialog.clone();
+    let _dialog_clone = dialog.clone();
 
     glib::spawn_future_local(async move {
         let result = gtk4::gio::spawn_blocking(move || {
@@ -182,7 +182,7 @@ fn show_update_dialog<F: Fn() + 'static>(app: &Application, on_complete: F) {
             }
             Err(e) => {
                 status_label_clone.set_text("Update failed (continuing anyway)");
-                buffer.set_text(&format!("Error: {}", e));
+                buffer.set_text(&format!("Error: {}", brew::sanitize_error(&e.to_string())));
             }
         }
 
@@ -438,30 +438,99 @@ fn create_installed_view() -> Box {
                 let details_name_clone = details_name_for_uninstall.clone();
                 let uninstall_btn_clone = uninstall_btn_for_handler.clone();
 
-                btn.set_sensitive(false);
-                status_label.set_text("Uninstalling...");
+                // Show confirmation dialog
+                let parent_window = btn.root()
+                    .and_then(|r| r.downcast::<gtk4::Window>().ok());
 
-                glib::spawn_future_local(async move {
-                    let result = gtk4::gio::spawn_blocking(move || {
-                        let rt = tokio::runtime::Runtime::new().unwrap();
-                        rt.block_on(brew::uninstall_package(&pkg_name))
-                    })
-                    .await
-                    .expect("Background task failed");
+                let dialog = Window::builder()
+                    .title("Confirm Uninstall")
+                    .default_width(400)
+                    .default_height(150)
+                    .modal(true)
+                    .build();
 
-                    match result {
-                        Ok(_) => {
-                            status_label.set_text("Uninstalled successfully!");
-                            list_box_clone.remove(&row_clone);
-                            details_name_clone.set_text("Package uninstalled");
-                            uninstall_btn_clone.set_visible(false);
-                        }
-                        Err(e) => {
-                            status_label.set_text(&format!("Error: {}", e));
-                            btn_clone.set_sensitive(true);
-                        }
-                    }
+                if let Some(ref parent) = parent_window {
+                    dialog.set_transient_for(Some(parent));
+                }
+
+                let dialog_box = Box::new(Orientation::Vertical, 10);
+                dialog_box.set_margin_start(20);
+                dialog_box.set_margin_end(20);
+                dialog_box.set_margin_top(20);
+                dialog_box.set_margin_bottom(20);
+
+                let title_label = Label::new(Some(&format!("Uninstall {}?", pkg_name)));
+                title_label.add_css_class("title-3");
+                dialog_box.append(&title_label);
+
+                let detail_label = Label::new(Some(&format!(
+                    "Are you sure you want to uninstall {}?\nThis action cannot be undone.",
+                    pkg_name
+                )));
+                detail_label.set_wrap(true);
+                dialog_box.append(&detail_label);
+
+                let button_box = Box::new(Orientation::Horizontal, 10);
+                button_box.set_halign(gtk4::Align::End);
+                button_box.set_margin_top(20);
+
+                let cancel_btn = Button::with_label("Cancel");
+                let confirm_btn = Button::with_label("Uninstall");
+                confirm_btn.add_css_class("destructive-action");
+
+                button_box.append(&cancel_btn);
+                button_box.append(&confirm_btn);
+                dialog_box.append(&button_box);
+
+                dialog.set_child(Some(&dialog_box));
+
+                // Cancel button closes dialog
+                let dialog_for_cancel = dialog.clone();
+                cancel_btn.connect_clicked(move |_| {
+                    dialog_for_cancel.close();
                 });
+
+                // Confirm button triggers uninstall
+                let dialog_for_confirm = dialog.clone();
+                let pkg_name_for_dialog = pkg_name.clone();
+                confirm_btn.connect_clicked(move |_| {
+                    dialog_for_confirm.close();
+
+                    let pkg_name = pkg_name_for_dialog.clone();
+                    let status_label = status_label.clone();
+                    let btn_clone = btn_clone.clone();
+                    let row_clone = row_clone.clone();
+                    let list_box_clone = list_box_clone.clone();
+                    let details_name_clone = details_name_clone.clone();
+                    let uninstall_btn_clone = uninstall_btn_clone.clone();
+
+                    btn_clone.set_sensitive(false);
+                    status_label.set_text("Uninstalling...");
+
+                    glib::spawn_future_local(async move {
+                        let result = gtk4::gio::spawn_blocking(move || {
+                            let rt = tokio::runtime::Runtime::new().unwrap();
+                            rt.block_on(brew::uninstall_package(&pkg_name))
+                        })
+                        .await
+                        .expect("Background task failed");
+
+                        match result {
+                            Ok(_) => {
+                                status_label.set_text("Uninstalled successfully!");
+                                list_box_clone.remove(&row_clone);
+                                details_name_clone.set_text("Package uninstalled");
+                                uninstall_btn_clone.set_visible(false);
+                            }
+                            Err(e) => {
+                                status_label.set_text(&format!("Error: {}", brew::sanitize_error(&e.to_string())));
+                                btn_clone.set_sensitive(true);
+                            }
+                        }
+                    });
+                });
+
+                dialog.present();
             }
         }
     });
@@ -495,7 +564,7 @@ fn create_installed_view() -> Box {
             Err(e) => {
                 spinner_clone.set_spinning(false);
                 spinner_clone.set_visible(false);
-                status_label_clone.set_text(&format!("Error: {}", e));
+                status_label_clone.set_text(&format!("Error: {}", brew::sanitize_error(&e.to_string())));
             }
         }
     });
@@ -653,7 +722,7 @@ fn create_browse_view() -> Box {
                     *results_clone.borrow_mut() = packages;
                 }
                 Err(e) => {
-                    status_clone.set_text(&format!("Error: {}", e));
+                    status_clone.set_text(&format!("Error: {}", brew::sanitize_error(&e.to_string())));
                 }
             }
         });
@@ -711,7 +780,7 @@ fn create_browse_view() -> Box {
                         }
                         Err(e) => {
                             name_label.set_text("Error loading package");
-                            desc_label.set_text(&e.to_string());
+                            desc_label.set_text(&brew::sanitize_error(&e.to_string()));
                         }
                     }
                 });
@@ -750,7 +819,7 @@ fn create_browse_view() -> Box {
                             status.set_text("Installed successfully!");
                         }
                         Err(e) => {
-                            status.set_text(&format!("Error: {}", e));
+                            status.set_text(&format!("Error: {}", brew::sanitize_error(&e.to_string())));
                             btn_clone.set_sensitive(true);
                         }
                     }
@@ -855,7 +924,7 @@ fn create_updates_view() -> Box {
                 }
             }
             Err(e) => {
-                status_label_clone.set_text(&format!("Error: {}", e));
+                status_label_clone.set_text(&format!("Error: {}", brew::sanitize_error(&e.to_string())));
             }
         }
     });
@@ -1011,7 +1080,7 @@ fn create_updates_view() -> Box {
                     upgrade_selected_clone.set_visible(false);
                 }
                 Err(e) => {
-                    status.set_text(&format!("Error: {}", e));
+                    status.set_text(&format!("Error: {}", brew::sanitize_error(&e.to_string())));
                     btn_clone.set_sensitive(true);
                 }
             }

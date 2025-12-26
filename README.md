@@ -11,11 +11,21 @@ A modern GTK4/libadwaita GUI for managing Homebrew packages on Linux.
 
 ## Screenshots
 
-The application uses a clean sidebar navigation with three main views:
+On startup, BrewHouse runs `brew update` to ensure your package index is current:
 
-- Installed: List and manage your installed packages
-- Browse: Search and install new packages
-- Updates: Check for and apply package updates
+![Startup Update Dialog](images/2025-12-26_1.png)
+
+The **Installed** view lists all your installed packages with version and description:
+
+![Installed Packages](images/2025-12-26_4.png)
+
+The **Browse** view lets you search the Homebrew repository and install new packages:
+
+![Browse and Search](images/2025-12-26_3.png)
+
+The **Updates** view shows outdated packages and lets you upgrade them:
+
+![Updates View](images/2025-12-26_2.png)
 
 ## Requirements
 

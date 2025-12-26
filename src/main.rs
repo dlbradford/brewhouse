@@ -640,6 +640,40 @@ fn create_browse_view() -> Box {
     details_homepage.add_css_class("dim-label");
     details_box.append(&details_homepage);
 
+    // Dependencies section
+    let deps_header = Label::new(Some("Dependencies:"));
+    deps_header.set_halign(gtk4::Align::Start);
+    deps_header.add_css_class("heading");
+    deps_header.set_margin_top(15);
+    deps_header.set_visible(false);
+    details_box.append(&deps_header);
+
+    let deps_list = Label::new(None);
+    deps_list.set_halign(gtk4::Align::Start);
+    deps_list.set_wrap(true);
+    deps_list.set_max_width_chars(50);
+    deps_list.add_css_class("dim-label");
+    deps_list.add_css_class("caption");
+    deps_list.set_visible(false);
+    details_box.append(&deps_list);
+
+    // Build dependencies section
+    let build_deps_header = Label::new(Some("Build Dependencies:"));
+    build_deps_header.set_halign(gtk4::Align::Start);
+    build_deps_header.add_css_class("heading");
+    build_deps_header.set_margin_top(10);
+    build_deps_header.set_visible(false);
+    details_box.append(&build_deps_header);
+
+    let build_deps_list = Label::new(None);
+    build_deps_list.set_halign(gtk4::Align::Start);
+    build_deps_list.set_wrap(true);
+    build_deps_list.set_max_width_chars(50);
+    build_deps_list.add_css_class("dim-label");
+    build_deps_list.add_css_class("caption");
+    build_deps_list.set_visible(false);
+    details_box.append(&build_deps_list);
+
     // Install button
     let install_btn = Button::with_label("Install");
     install_btn.add_css_class("suggested-action");
@@ -734,6 +768,10 @@ fn create_browse_view() -> Box {
     let details_version_clone = details_version.clone();
     let details_desc_clone = details_desc.clone();
     let details_homepage_clone = details_homepage.clone();
+    let deps_header_clone = deps_header.clone();
+    let deps_list_clone = deps_list.clone();
+    let build_deps_header_clone = build_deps_header.clone();
+    let build_deps_list_clone = build_deps_list.clone();
     let install_btn_clone = install_btn.clone();
     let install_status_clone = install_status.clone();
 
@@ -747,6 +785,10 @@ fn create_browse_view() -> Box {
                 let version_label = details_version_clone.clone();
                 let desc_label = details_desc_clone.clone();
                 let homepage_label = details_homepage_clone.clone();
+                let deps_header = deps_header_clone.clone();
+                let deps_list = deps_list_clone.clone();
+                let build_deps_header = build_deps_header_clone.clone();
+                let build_deps_list = build_deps_list_clone.clone();
                 let btn = install_btn_clone.clone();
                 let status = install_status_clone.clone();
 
@@ -754,6 +796,10 @@ fn create_browse_view() -> Box {
                 version_label.set_text("");
                 desc_label.set_text("");
                 homepage_label.set_text("");
+                deps_header.set_visible(false);
+                deps_list.set_visible(false);
+                build_deps_header.set_visible(false);
+                build_deps_list.set_visible(false);
                 btn.set_visible(false);
                 status.set_text("");
 
@@ -776,6 +822,25 @@ fn create_browse_view() -> Box {
                             } else {
                                 homepage_label.set_visible(false);
                             }
+
+                            // Show runtime dependencies
+                            if let Some(deps) = &info.dependencies {
+                                if !deps.is_empty() {
+                                    deps_list.set_text(&deps.join(", "));
+                                    deps_header.set_visible(true);
+                                    deps_list.set_visible(true);
+                                }
+                            }
+
+                            // Show build dependencies
+                            if let Some(deps) = &info.build_dependencies {
+                                if !deps.is_empty() {
+                                    build_deps_list.set_text(&deps.join(", "));
+                                    build_deps_header.set_visible(true);
+                                    build_deps_list.set_visible(true);
+                                }
+                            }
+
                             btn.set_visible(true);
                         }
                         Err(e) => {
